@@ -2,6 +2,7 @@ import json
 import os
 import time
 from collections.abc import Mapping
+from dataclasses import dataclass, field
 from pathlib import Path
 from typing import Any, NamedTuple
 
@@ -40,7 +41,8 @@ class ActionEnvironment(NamedTuple):
         )
 
 
-class Configuration(NamedTuple):
+@dataclass(frozen=True)
+class Configuration:
     """Configuration class for GitHub Actions Version Updater"""
 
     github_token: str | None = None
@@ -50,13 +52,13 @@ class Configuration(NamedTuple):
     pull_request_title: str = "Update GitHub Action Versions"
     pull_request_branch: str | None = None
     commit_message: str = "Update GitHub Action Versions"
-    ignore_actions: set[str] = set()
+    ignore_actions: set[str] = field(default_factory=set)
     update_version_with: str = LATEST_RELEASE_TAG
-    pull_request_user_reviewers: set[str] = set()
-    pull_request_team_reviewers: set[str] = set()
-    pull_request_labels: set[str] = set()
-    release_types: list[str] = ALL_RELEASE_TYPES
-    extra_workflow_paths: set[str] = set()
+    pull_request_user_reviewers: set[str] = field(default_factory=set)
+    pull_request_team_reviewers: set[str] = field(default_factory=set)
+    pull_request_labels: set[str] = field(default_factory=set)
+    release_types: list[str] = field(default_factory=lambda: ALL_RELEASE_TYPES[:])
+    extra_workflow_paths: set[str] = field(default_factory=set)
 
     def get_pull_request_branch_name(self) -> tuple[bool, str]:
         """
@@ -110,7 +112,7 @@ class Configuration(NamedTuple):
         cleaned_user_config: dict[str, Any] = {}
 
         for key, value in user_config.items():
-            if key in cls._fields:
+            if key in cls.__dataclass_fields__:
                 cleaned_value = getattr(cls, f"clean_{key.lower()}", lambda x: x)(value)
 
                 if cleaned_value is not None:
